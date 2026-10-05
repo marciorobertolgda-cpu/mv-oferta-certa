@@ -219,7 +219,7 @@ def buscar_ofertas():
             "erro": "Mercado Livre não conectado"
         }), 401
 
-r = requests.get(
+    r = requests.get(
     f"{ML_API}/products/search",
     params={
         "site_id": "MLB",
