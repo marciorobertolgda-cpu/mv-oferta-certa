@@ -421,3 +421,53 @@ def ofertas():
         ],
         "proximo_passo": "ranquear ofertas e integrar afiliados"
     })
+
+@app.get("/detalhes-produtos")
+def detalhes_produtos():
+    termo = request.args.get("q", "smart tv").strip() or "smart tv"
+
+    access_token = get_valid_token()
+    if not access_token:
+        return jsonify({"ok": False, "erro": "Mercado Livre não conectado"}), 401
+
+    try:
+        busca = requests.get(
+            f"{ML_API}/products/search",
+            params={"site_id": "MLB", "status": "active", "q": termo},
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=20
+        )
+
+        if not busca.ok:
+            return jsonify({
+                "ok": False,
+                "erro": "Falha ao buscar produtos",
+                "status_ml": busca.status_code
+            }), busca.status_code
+
+        resultados = busca.json().get("results", [])[:10]
+        produtos = []
+
+        for item in resultados:
+            produto = {
+                "id": item.get("id"),
+                "nome": item.get("name"),
+                "status": item.get("status"),
+                "dominio": item.get("domain_id")
+            }
+
+            produtos.append(produto)
+
+        return jsonify({
+            "ok": True,
+            "busca": termo,
+            "quantidade": len(produtos),
+            "produtos": produtos
+        })
+
+    except requests.RequestException as e:
+        return jsonify({
+            "ok": False,
+            "erro": "Falha de comunicação com Mercado Livre",
+            "detalhe": str(e)
+        }), 502
