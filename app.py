@@ -207,8 +207,8 @@ def teste_ml():
         "user_id": data.get("id"),
         "nickname": data.get("nickname")
     })
-      @app.get("/buscar-ofertas")
-def buscar_ofertas():
+    @app.get("/buscar-ofertas")
+    def buscar_ofertas():
     termo = request.args.get("q", "smart tv")
     access_token = get_saved_token()
 
