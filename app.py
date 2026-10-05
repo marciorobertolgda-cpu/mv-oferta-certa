@@ -207,3 +207,55 @@ def teste_ml():
         "user_id": data.get("id"),
         "nickname": data.get("nickname")
     })
+@app.get("/buscar-ofertas")
+def buscar_ofertas():
+    termo = request.args.get("q", "smart tv")
+
+    access_token = get_saved_token()
+
+    if not access_token:
+        return jsonify({
+            "ok": False,
+            "erro": "Mercado Livre não conectado"
+        }), 401
+
+    r = requests.get(
+        f"{ML_API}/sites/MLB/search",
+        params={
+            "q": termo,
+            "limit": 10
+        },
+        headers={
+            "Authorization": f"Bearer {access_token}"
+        },
+        timeout=20
+    )
+
+    if not r.ok:
+        return jsonify({
+            "ok": False,
+            "status_ml": r.status_code,
+            "erro": "Falha ao buscar ofertas"
+        }), r.status_code
+
+    data = r.json()
+    produtos = []
+
+    for item in data.get("results", []):
+        produtos.append({
+            "id": item.get("id"),
+            "titulo": item.get("title"),
+            "preco": item.get("price"),
+            "preco_original": item.get("original_price"),
+            "link": item.get("permalink"),
+            "frete_gratis": (
+                item.get("shipping", {}).get("free_shipping", False)
+            )
+        })
+
+    return jsonify({
+        "ok": True,
+        "busca": termo,
+        "quantidade": len(produtos),
+        "produtos": produtos
+    })
