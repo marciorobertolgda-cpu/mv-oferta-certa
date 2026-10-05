@@ -207,10 +207,9 @@ def teste_ml():
         "user_id": data.get("id"),
         "nickname": data.get("nickname")
     })
-@app.get("/buscar-ofertas")
+      @app.get("/buscar-ofertas")
 def buscar_ofertas():
     termo = request.args.get("q", "smart tv")
-
     access_token = get_saved_token()
 
     if not access_token:
@@ -220,20 +219,20 @@ def buscar_ofertas():
         }), 401
 
     r = requests.get(
-    f"{ML_API}/products/search",
-    params={
-        "site_id": "MLB",
-        "status": "active",
-        "q": termo,
-        "limit": 10
-    },
-    headers={
-        "Authorization": f"Bearer {access_token}"
-    },
-    timeout=20
-)    
+        f"{ML_API}/products/search",
+        params={
+            "site_id": "MLB",
+            "status": "active",
+            "q": termo,
+            "limit": 10
+        },
+        headers={
+            "Authorization": f"Bearer {access_token}"
+        },
+        timeout=20
+    )
 
-        if not r.ok:
+    if not r.ok:
         try:
             detalhe_ml = r.json()
         except ValueError:
@@ -245,24 +244,11 @@ def buscar_ofertas():
             "erro": "Falha ao buscar ofertas",
             "detalhe_ml": detalhe_ml
         }), r.status_code
-    data = r.json()
-    produtos = []
 
-    for item in data.get("results", []):
-        produtos.append({
-            "id": item.get("id"),
-            "titulo": item.get("title"),
-            "preco": item.get("price"),
-            "preco_original": item.get("original_price"),
-            "link": item.get("permalink"),
-            "frete_gratis": (
-                item.get("shipping", {}).get("free_shipping", False)
-            )
-        })
+    data = r.json()
 
     return jsonify({
         "ok": True,
         "busca": termo,
-        "quantidade": len(produtos),
-        "produtos": produtos
-    })
+        "resposta_ml": data
+    })   
