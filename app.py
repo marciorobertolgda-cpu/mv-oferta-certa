@@ -219,17 +219,19 @@ def buscar_ofertas():
             "erro": "Mercado Livre não conectado"
         }), 401
 
-    r = requests.get(
-        f"{ML_API}/sites/MLB/search",
-        params={
-            "q": termo,
-            "limit": 10
-        },
-        headers={
-            "Authorization": f"Bearer {access_token}"
-        },
-        timeout=20
-    )
+r = requests.get(
+    f"{ML_API}/products/search",
+    params={
+        "site_id": "MLB",
+        "status": "active",
+        "q": termo,
+        "limit": 10
+    },
+    headers={
+        "Authorization": f"Bearer {access_token}"
+    },
+    timeout=20
+)    
 
     if not r.ok:
         return jsonify({
