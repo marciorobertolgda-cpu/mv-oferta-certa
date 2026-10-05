@@ -158,3 +158,52 @@ def ofertas():
             "relevancia"
         ]
     })
+def get_saved_token():
+    init_db()
+
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT access_token
+                FROM ml_tokens
+                ORDER BY updated_at DESC
+                LIMIT 1
+            """)
+            row = cur.fetchone()
+
+    return row[0] if row else None
+
+
+@app.get("/teste-ml")
+def teste_ml():
+    access_token = get_saved_token()
+
+    if not access_token:
+        return jsonify({
+            "ok": False,
+            "erro": "Nenhum token do Mercado Livre encontrado"
+        }), 401
+
+    r = requests.get(
+        f"{ML_API}/users/me",
+        headers={
+            "Authorization": f"Bearer {access_token}"
+        },
+        timeout=20
+    )
+
+    if not r.ok:
+        return jsonify({
+            "ok": False,
+            "status_ml": r.status_code,
+            "erro": "Falha ao consultar Mercado Livre"
+        }), r.status_code
+
+    data = r.json()
+
+    return jsonify({
+        "ok": True,
+        "mercado_livre": "conectado",
+        "user_id": data.get("id"),
+        "nickname": data.get("nickname")
+    })
