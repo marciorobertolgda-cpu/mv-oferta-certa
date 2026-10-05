@@ -100,4 +100,49 @@ def callback():
 
     payload = {
         "grant_type": "authorization_code",
-        "
+          "client_id": os.environ.get("ML_CLIENT_ID"),
+        "client_secret": os.environ.get("ML_CLIENT_SECRET"),
+        "code": code,
+        "redirect_uri": os.environ.get("ML_REDIRECT_URI"),
+    }
+
+    r = requests.post(
+        f"{ML_API}/oauth/token",
+        data=payload,
+        timeout=20
+    )
+    data = r.json()
+
+    if not r.ok:
+        return jsonify(data), r.status_code
+
+    user_id = data.get("user_id")
+    access_token = data.get("access_token")
+    refresh_token = data.get("refresh_token")
+    expires_in = int(data.get("expires_in") or 0)
+
+    if not user_id or not access_token:
+        return jsonify({"error": "Resposta OAuth incompleta"}), 502
+
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+
+    save_tokens(
+        user_id,
+        access_token,
+        refresh_token,
+        expires_at
+    )
+
+    return jsonify({
+        "conectado": True,
+        "mensagem": "Mercado Livre autorizado e token armazenado."
+    })
+
+
+@app.get("/ofertas")
+def ofertas():
+    return jsonify({
+        "status": "estrutura pronta",
+        "proximo_passo": "coletar e ranquear ofertas",
+        "criterios": ["desconto", "preco", "frete", "relevancia"]
+    })      "
