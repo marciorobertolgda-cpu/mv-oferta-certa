@@ -627,3 +627,62 @@ def produto_oferta(produto_id):
             "error": "Falha de comunicação com Mercado Livre",
             "detalhe": str(e)
         }), 502
+
+@app.get("/buscar-itens-produto/<produto_id>")
+def buscar_itens_produto(produto_id):
+    access_token = get_valid_token()
+
+    if not access_token:
+        return jsonify({
+            "ok": False,
+            "erro": "Mercado Livre não conectado"
+        }), 401
+
+    try:
+        r = requests.get(
+            f"{ML_API}/sites/MLB/search",
+            params={
+                "catalog_product_id": produto_id,
+                "status": "active",
+                "limit": 10
+            },
+            headers={
+                "Authorization": f"Bearer {access_token}"
+            },
+            timeout=20
+        )
+
+        data = r.json()
+
+        if not r.ok:
+            return jsonify({
+                "ok": False,
+                "status_ml": r.status_code,
+                "detalhe_ml": data
+            }), r.status_code
+
+        itens = []
+
+        for item in data.get("results", []):
+            itens.append({
+                "item_id": item.get("id"),
+                "titulo": item.get("title"),
+                "preco": item.get("price"),
+                "original_price": item.get("original_price"),
+                "moeda": item.get("currency_id"),
+                "link": item.get("permalink")
+            })
+
+        return jsonify({
+            "ok": True,
+            "produto_id": produto_id,
+            "quantidade": len(itens),
+            "itens": itens
+        })
+
+    except requests.RequestException as e:
+        return jsonify({
+            "ok": False,
+            "erro": "Falha de comunicação com Mercado Livre",
+            "detalhe": str(e)
+        }), 502
