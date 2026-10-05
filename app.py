@@ -6,6 +6,7 @@ import requests
 from flask import Flask, jsonify, redirect, request
 
 app = Flask(__name__)
+
 ML_API = "https://api.mercadolibre.com"
 
 
@@ -100,7 +101,7 @@ def callback():
 
     payload = {
         "grant_type": "authorization_code",
-          "client_id": os.environ.get("ML_CLIENT_ID"),
+        "client_id": os.environ.get("ML_CLIENT_ID"),
         "client_secret": os.environ.get("ML_CLIENT_SECRET"),
         "code": code,
         "redirect_uri": os.environ.get("ML_REDIRECT_URI"),
@@ -111,6 +112,7 @@ def callback():
         data=payload,
         timeout=20
     )
+
     data = r.json()
 
     if not r.ok:
@@ -122,9 +124,14 @@ def callback():
     expires_in = int(data.get("expires_in") or 0)
 
     if not user_id or not access_token:
-        return jsonify({"error": "Resposta OAuth incompleta"}), 502
+        return jsonify({
+            "error": "Resposta OAuth incompleta"
+        }), 502
 
-    expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+    expires_at = (
+        datetime.now(timezone.utc)
+        + timedelta(seconds=expires_in)
+    )
 
     save_tokens(
         user_id,
@@ -144,5 +151,10 @@ def ofertas():
     return jsonify({
         "status": "estrutura pronta",
         "proximo_passo": "coletar e ranquear ofertas",
-        "criterios": ["desconto", "preco", "frete", "relevancia"]
-    })      "
+        "criterios": [
+            "desconto",
+            "preco",
+            "frete",
+            "relevancia"
+        ]
+    })
