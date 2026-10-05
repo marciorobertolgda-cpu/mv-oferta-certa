@@ -515,3 +515,62 @@ def produto_detalhes(produto_id):
             "erro": "Falha de comunicação com Mercado Livre",
             "detalhe": str(e)
         }), 502
+
+@app.get("/produto-resumo/<produto_id>")
+def produto_resumo(produto_id):
+    access_token = get_valid_token()
+
+    if not access_token:
+        return jsonify({
+            "ok": False,
+            "erro": "Mercado Livre não conectado"
+        }), 401
+
+    try:
+        r = requests.get(
+            f"{ML_API}/products/{produto_id}",
+            headers={
+                "Authorization": f"Bearer {access_token}"
+            },
+            timeout=20
+        )
+
+        data = r.json()
+
+        if not r.ok:
+            return jsonify({
+                "ok": False,
+                "erro": "Falha ao consultar produto",
+                "detalhe_ml": data
+            }), r.status_code
+
+        fotos = []
+        for foto in data.get("pictures", []):
+            url = foto.get("secure_url") or foto.get("url")
+            if url:
+                fotos.append(url)
+
+        atributos = {}
+        for atributo in data.get("attributes", []):
+            nome = atributo.get("name")
+            valor = atributo.get("value_name")
+            if nome and valor:
+                atributos[nome] = valor
+
+        return jsonify({
+            "ok": True,
+            "id": data.get("id"),
+            "nome": data.get("name"),
+            "status": data.get("status"),
+            "dominio": data.get("domain_id"),
+            "foto": fotos[0] if fotos else None,
+            "fotos": fotos,
+            "atributos": atributos
+        })
+
+    except requests.RequestException as e:
+        return jsonify({
+            "ok": False,
+            "erro": "Falha de comunicação com Mercado Livre",
+            "detalhe": str(e)
+        }), 502
