@@ -574,3 +574,56 @@ def produto_resumo(produto_id):
             "erro": "Falha de comunicação com Mercado Livre",
             "detalhe": str(e)
         }), 502
+
+@app.get("/produto-oferta/<produto_id>")
+def produto_oferta(produto_id):
+    access_token = get_valid_token()
+
+    if not access_token:
+        return jsonify({
+            "ok": False,
+            "error": "Mercado Livre não conectado"
+        }), 401
+
+    try:
+        r = requests.get(
+            f"{ML_API}/products/{produto_id}",
+            headers={
+                "Authorization": f"Bearer {access_token}"
+            },
+            timeout=20
+        )
+
+        data = r.json()
+
+        if not r.ok:
+            return jsonify({
+                "ok": False,
+                "error": "Falha ao consultar produto",
+                "detalhe_ml": data
+            }), r.status_code
+
+        vencedor = data.get("buy_box_winner") or {}
+
+        preco = vencedor.get("price")
+        moeda = vencedor.get("currency_id")
+        item_id = vencedor.get("item_id")
+        link = data.get("permalink")
+
+        return jsonify({
+            "ok": True,
+            "produto_id": data.get("id"),
+            "nome": data.get("name"),
+            "item_id": item_id,
+            "preco": preco,
+            "moeda": moeda,
+            "link": link,
+            "tem_oferta": bool(vencedor)
+        })
+
+    except requests.RequestException as e:
+        return jsonify({
+            "ok": False,
+            "error": "Falha de comunicação com Mercado Livre",
+            "detalhe": str(e)
+        }), 502
