@@ -777,4 +777,59 @@ def buscar_meus_itens_produto(produto_id):
             "ok": False,
             "erro": "Falha de comunicação com Mercado Livre",
             "detalhe": str(e)
+       }), 502
+
+@app.get("/item-oferta/<item_id>")
+def item_oferta(item_id):
+    access_token = get_valid_token()
+
+    if not access_token:
+        return jsonify({
+            "ok": False,
+            "erro": "Mercado Livre não conectado"
+        }), 401
+
+    try:
+        r = requests.get(
+            f"{ML_API}/items/{item_id}",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=20
+        )
+
+        data = r.json()
+
+        if not r.ok:
+            return jsonify({
+                "ok": False,
+                "status_ml": r.status_code,
+                "detalhe_ml": data
+            }), r.status_code
+
+        preco = data.get("price")
+        preco_original = data.get("original_price")
+
+        desconto = None
+        if preco is not None and preco_original is not None and preco_original > preco:
+            desconto = round(
+                ((preco_original - preco) / preco_original) * 100, 2
+            )
+
+        return jsonify({
+            "ok": True,
+            "item_id": data.get("id"),
+            "titulo": data.get("title"),
+            "preco": preco,
+            "preco_original": preco_original,
+            "desconto_percentual": desconto,
+            "moeda": data.get("currency_id"),
+            "link": data.get("permalink"),
+            "catalog_product_id": data.get("catalog_product_id"),
+            "status": data.get("status")
+        })
+
+    except requests.RequestException as e:
+        return jsonify({
+            "ok": False,
+            "erro": "Falha de comunicação com Mercado Livre",
+            "detalhe": str(e)
         }), 502
