@@ -471,3 +471,47 @@ def detalhes_produtos():
             "erro": "Falha de comunicação com Mercado Livre",
             "detalhe": str(e)
         }), 502
+        
+@app.get("/produto-detalhes/<produto_id>")
+def produto_detalhes(produto_id):
+    access_token = get_valid_token()
+
+    if not access_token:
+        return jsonify({
+            "ok": False,
+            "erro": "Mercado Livre não conectado"
+        }), 401
+
+    try:
+        r = requests.get(
+            f"{ML_API}/products/{produto_id}",
+            headers={
+                "Authorization": f"Bearer {access_token}"
+            },
+            timeout=20
+        )
+
+        try:
+            data = r.json()
+        except ValueError:
+            data = {"resposta": r.text}
+
+        if not r.ok:
+            return jsonify({
+                "ok": False,
+                "status_ml": r.status_code,
+                "erro": "Falha ao consultar produto",
+                "detalhe_ml": data
+            }), r.status_code
+
+        return jsonify({
+            "ok": True,
+            "produto": data
+        })
+
+    except requests.RequestException as e:
+        return jsonify({
+            "ok": False,
+            "erro": "Falha de comunicação com Mercado Livre",
+            "detalhe": str(e)
+        }), 502
