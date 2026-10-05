@@ -209,7 +209,7 @@ def teste_ml():
     })
     @app.get("/buscar-ofertas")
     def buscar_ofertas():
-    termo = request.args.get("q", "smart tv")
+        termo = request.args.get("q", "smart tv")
     access_token = get_saved_token()
 
     if not access_token:
