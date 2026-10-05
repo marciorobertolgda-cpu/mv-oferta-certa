@@ -233,13 +233,18 @@ def buscar_ofertas():
     timeout=20
 )    
 
-    if not r.ok:
+        if not r.ok:
+        try:
+            detalhe_ml = r.json()
+        except ValueError:
+            detalhe_ml = r.text
+
         return jsonify({
             "ok": False,
             "status_ml": r.status_code,
-            "erro": "Falha ao buscar ofertas"
+            "erro": "Falha ao buscar ofertas",
+            "detalhe_ml": detalhe_ml
         }), r.status_code
-
     data = r.json()
     produtos = []
 
